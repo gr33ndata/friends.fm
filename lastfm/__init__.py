@@ -8,6 +8,7 @@ class LastFMParams(dict):
         self['user'] = user
         self['api_key'] = key
         self['format'] = 'json'
+        self['limit'] = '20'
         
         
 class LastFM:
@@ -19,20 +20,22 @@ class LastFM:
     def pprint(self, data):
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))  
           
-    def request(self, **kwargs):
-        lfmparams = LastFMParams(self.user, self.key)
+    def request(self, user='', **kwargs):
+        if not user:
+            user = self.user
+        lfmparams = LastFMParams(user, self.key)
         for param in kwargs:
             lfmparams[param] = kwargs[param]
         params = urllib.urlencode(lfmparams)
-        print "http://ws.audioscrobbler.com/2.0/?%s" % params
         f = urllib.urlopen("http://ws.audioscrobbler.com/2.0/?%s" % params)
         json_data = f.read()
-        print json_data
         data = json.loads(json_data)
+        if 'error' in data:
+            raise Exception
         return data
         
-    def userTopArtists(self, user='', period='overall'):
-        if not user:
-            user = self.user
-        return self.request(method='user.gettopartists', period=period)
+    def userTopArtists(self, user='', period='overall', limit='20'):
+        return self.request(method='user.gettopartists', user=user, period=period, limit=limit)
         
+    def userFriends(self, user='', limit='100'):
+        return self.request(method='user.getfriends', user=user, limit=limit)
